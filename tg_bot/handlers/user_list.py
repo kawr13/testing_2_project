@@ -11,13 +11,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, Update, CallbackQuery, InlineKeyboardButton, URLInputFile
 from icecream import ic
 
-from forms.forms import CheckImei
-from keyboards.inline import go_back_start
-from models.db_utilit import is_active, is_admin
+from tg_bot.keyboards.inline import go_back_start
+from models.db_utilit import is_active, is_admin, get_all_users, get_user, update_user
 from models.model import User
-from router.auth import create_token
 from utilities.actions import callback_handler, actions
-from utilities.check_imei import send_to_url
 from utilities.icream import log
 # from keyboards.inline import
 # from models.model import
@@ -61,7 +58,7 @@ paginate_users = PaginateUsers()
 async def add_user_handler(call: CallbackQuery, state: FSMContext, page: int = 1):
     items_per_page = 1
     dict_ = await state.get_data()
-    users = await User.filter().all()
+    users = await get_all_users()
     ic(call.data)
     if '+' in call.data and len(call.data.split('+')) == 3:
         page = int(call.data.split('+')[2])
@@ -99,15 +96,16 @@ async def add_user_handler(call: CallbackQuery, state: FSMContext, page: int = 1
 
 
 async def block_handler(call: CallbackQuery, state: FSMContext):
-    from utilities.bot_conf import bot
+    from tg_bot.bot_conf import bot
     dict_ = await state.get_data()
     page = dict_.get('pages')
     id = call.data.split('+')[1]
-    user = await User.filter(tg_id=id).first()
+    user = await get_user(id)
     if user.is_active:
         user.is_active = False
     else:
         user.is_active = True
         await bot.send_message(user.tg_id, 'Ваш аккаунт был активирован\n\nПовторно запустите бота')
-    await user.save()
+    await update_user(user)
     await add_user_handler(call, state, page=page)
+

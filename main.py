@@ -5,11 +5,8 @@ import uvicorn
 from icecream import ic
 from pydantic import BaseModel
 
-from db_conf import init, close
 from models.db_utilit import set_active
-from utilities.check_imei import send_to_url
 from utilities.configurate import settings
-# from utilities.icream import log
 from fastapi.staticfiles import StaticFiles
 import asyncio
 import httpx
@@ -29,15 +26,20 @@ import sys
 import os
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from dotenv import load_dotenv
-from handlers import start
+from tg_bot.handlers import start
+from contextlib import asynccontextmanager
 
 from dataclasses import dataclass, field
-# from router.rout_fast import router as fast_router
-from utilities.bot_conf import dp, bot
-from handlers.start import router as st_rout
-from handlers.as_token import router as as_token
-from handlers.user_list import router as user_list
-from router.auth import router as auth, verify_token, is_admin
+from backend.router.user_list import router as usr_lst
+from backend.router.wb_api import router as wb_api
+from tg_bot.bot_conf import dp, bot
+from tg_bot.handlers.start import router as st_rout
+from tg_bot.handlers.as_token import router as as_token
+from tg_bot.handlers.user_list import router as user_list
+from tg_bot.handlers.wb_pars import router as wb_pars
+from backend.router.auth import router as auth, verify_token, is_admin
+from db_conf import engine, Base
+from utilities.shedule_process import scheduler
 
 load_dotenv()
 
@@ -46,9 +48,14 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN: Optional[str] = os.getenv("BOT_TOKEN")
 
 
+@asynccontextmanager
 async def lifespan(app: FastAPI) -> None:
-    await init()
-    dp.include_routers(st_rout, as_token, user_list,)
+    scheduler.start()
+    async with engine.begin() as conn:
+        # Создание всех таблиц
+        await conn.run_sync(Base.metadata.create_all)
+
+    dp.include_routers(st_rout, as_token, user_list, wb_pars)
     dp.routers_initialized = True
     await bot.set_webhook(
         url=f'{settings.WEBHOOK_URL}{settings.WEBHOOK_PATH}',
@@ -57,10 +64,14 @@ async def lifespan(app: FastAPI) -> None:
     )
 
     yield
-    await close()
+    scheduler.shutdown()
+    await engine.dispose()
+
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth)
+app.include_router(usr_lst)
+app.include_router(wb_api)
 
 
 TELEGRAM_IP_RANGES = [
@@ -75,6 +86,13 @@ async def is_telegram_ip(ip: str) -> bool:
         if ip_addr in ipaddress.ip_network(net):
             return True
     return False
+
+
+@app.on_event("startup")
+async def startup():
+    webhook_url = f'{settings.WEBHOOK_URL}{settings.WEBHOOK_PATH}'
+    await bot.set_webhook(webhook_url)
+    logger.info("База данных подключена")
 
 
 @app.post('/webhook')
@@ -96,45 +114,10 @@ async def verify_api_key(api_token: str) -> None:
         logger.error('Не авторизованный запрос')
         raise HTTPException(status_code=403, detail='Не авторизованный запрос')
 
-@app.on_event("startup")
-async def startup():
-    webhook_url = f'{settings.WEBHOOK_URL}{settings.WEBHOOK_PATH}'
-    await bot.set_webhook(webhook_url)
-    logger.info("База данных подключена")
-
-
-# Модель для тела запроса
-class IMEIRequest(BaseModel):
-    imei: str
-
-
-class UserTgId(BaseModel):
-    tg_id: int
-    is_active: bool
-
-
-class UserTgIdOut(BaseModel):
-    tg_id: int
-    is_active: bool
-
-
-@app.post('/api/check-imei/')
-async def check_imei_api(data: IMEIRequest, user_id: int = Depends(verify_token)):
-    response = await send_to_url(data.imei)
-    return response
-
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
     await bot.delete_webhook()
-
-
-@app.post('/api/vite-list/')
-async def vite_list(data : UserTgId, user_id: int = Depends(verify_token)):
-    tg_id = data.tg_id
-    is_active = data.is_active
-    result = await set_active(tg_id=tg_id, is_activ=is_active)
-    return UserTgIdOut(tg_id=tg_id, is_active=is_active)
 
 
 if __name__ == "__main__":

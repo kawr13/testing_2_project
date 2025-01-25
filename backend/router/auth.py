@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 
+from models.db_utilit import get_user
 from models.model import User
 from dotenv import load_dotenv
 import os
@@ -77,8 +78,11 @@ class UserId(BaseModel):
 
 @router.post('/get-token/')
 async def get_token(data: UserId):
-    token = create_token(data.user_id)
-    return {"token": token}
+    user = await get_user(data.user_id)
+    if user.is_active:
+        token = create_token(data.user_id)
+        return {"token": token}
+    raise HTTPException(status_code=401, detail="User is not active, go to telegram bot to activate")
 
 
 @router.get("/protected/")

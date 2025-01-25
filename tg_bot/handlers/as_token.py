@@ -10,13 +10,10 @@ from fastapi import APIRouter, Request
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, Update, CallbackQuery, InlineKeyboardButton, URLInputFile
 from icecream import ic
-
-from forms.forms import CheckImei
-from keyboards.inline import go_back_start
+from tg_bot.keyboards.inline import go_back_start
 from models.db_utilit import is_active, is_admin
-from router.auth import create_token
+from backend.router.auth import create_token
 from utilities.actions import callback_handler, actions
-from utilities.check_imei import send_to_url
 from utilities.icream import log
 # from keyboards.inline import
 # from models.model import

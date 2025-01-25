@@ -1,6 +1,6 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class CheckImei(StatesGroup):
+class ArtikleWb(StatesGroup):
     start = State()
     end = State()

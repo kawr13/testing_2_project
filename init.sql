@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS products (
+    id SERIAL PRIMARY KEY,
+    artikul VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    price FLOAT NOT NULL,
+    rating FLOAT,
+    total_quantity INT,
+    last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_update BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    tg_id VARCHAR NOT NULL,
+    jwt_token VARCHAR NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    is_admin BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

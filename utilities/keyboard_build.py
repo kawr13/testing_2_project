@@ -131,31 +131,3 @@ class KeyboardBuilder:
             ])
 
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
-class PaginatedResume:
-    def __init__(self):
-        self.page = None
-        self.items_per_page = None
-        self.resumes = None
-        self.resum = None
-
-    async def __fetch_products(self):
-        offset = (self.page - 1) * self.items_per_page
-        limit = offset + self.items_per_page
-        return self.resumes[offset:limit]
-
-    async def get_message(self) -> str:
-        """Формирование сообщения для текущей страницы."""
-        current_page_resumes = await self.__fetch_products()
-        if not current_page_resumes:
-            return "<b>Пользователи не найдены.</b>"
-
-        msg = '*Список пользователей*:\n\n'
-        msg += ''.join([
-            f'{i + 1}. {resume['name'][0]}. {resume['surname']}\n телефон: {resume.phone}\n\n'
-            for i, resume in enumerate(current_page_resumes, start=(self.page - 1))
-        ])
-        ic(msg)
-        logger.info(msg)
-        return msg

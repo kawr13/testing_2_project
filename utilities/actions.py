@@ -49,13 +49,12 @@ def load_actions(mapping):
 
 action_mapping = {
     'admin_panel': ('', ''),
-    'check_imei': ('handlers.start', 'check_imei_handler'),
-    'is_menu': ('handlers.start', 'start_handler'),
-    'checking': ('handlers.start', 'checking_handler'),
-    'add_token': ('handlers.as_token', 'add_token_handler'),
-    'add_user': ('handlers.user_list', 'add_user_handler'),
-    'add_user': ('handlers.user_list', 'add_user_handler'),
-    'is_block': ('handlers.user_list', 'block_handler'),
+    'is_menu': ('tg_bot.handlers.start', 'start_handler'),
+    'add_token': ('tg_bot.handlers.as_token', 'add_token_handler'),
+    'add_user': ('tg_bot.handlers.user_list', 'add_user_handler'),
+    'add_user': ('tg_bot.handlers.user_list', 'add_user_handler'),
+    'is_block': ('tg_bot.handlers.user_list', 'block_handler'),
+    'check_articul': ('tg_bot.handlers.wb_pars', 'check_articul_handler'),
 }
 
 img_dict = {
@@ -63,6 +62,7 @@ img_dict = {
     'no_auth': 'https://i.pinimg.com/736x/9a/fc/7a/9afc7a25b88f93f1f95e67186d979090.jpg',
     'token': 'https://i.pinimg.com/736x/57/cf/26/57cf26529029ab44309d7b52c2173713.jpg',
     'user': 'https://i.pinimg.com/736x/c8/1f/27/c81f27d71450b58942f9b632c6d18be7.jpg',
+    'wb': 'https://i.pinimg.com/736x/aa/6a/20/aa6a2018e29e67a394409bd18420c700.jpg',
 }
 
 actions = load_actions(action_mapping)
