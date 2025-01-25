@@ -62,7 +62,6 @@ async def send_message(message: Message, text: str, image_path: str = None, edit
                     await state_set(msg_1)
                     return
                 except Exception as e:
-                    ic(f'Хуйбала сработала {e}')
                     await delleting_msg(dict_['msg_1'])
                     msg_1 = await message.answer_photo(photo=image, caption=text, reply_markup=keyboars,
                                                        parse_mode="Markdown")
